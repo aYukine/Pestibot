@@ -1,1 +1,3 @@
-uint8[4] wheel
+uint8[2] wheels
+uint8[2] servos
+bool pump

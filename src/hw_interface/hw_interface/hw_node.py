@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from pestibot_messages.msg import Position, MotorControl
+from pestibot_messages.msg import MotorControl
 import serial
 
 class HardwareBridge(Node):
@@ -8,41 +8,55 @@ class HardwareBridge(Node):
         super().__init__('hardware_bridge')
         
         self.ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=0.05)
-        
-        self.imu_pub = self.create_publisher(Position, 'imu_data', 10)
         self.motor_sub = self.create_subscription(MotorControl, 'motor_actions', self.motor_cb, 10)
+        self.current_motor_cmd = None
         
-        self.create_timer(0.02, self.update)
+        self.create_timer(0.05, self.update)
         self.get_logger().info("Hardware Bridge Node Initialized")
 
-    def motor_cb(self, msg):
-        """Packet format: MOT,v1,v2,v3,v4,v5,v6,v7,v8\n"""
-        try:
-            # Accessing the array directly from the message
-            # msg.motor is a list/tuple of 8 integers (0-255)
-            motor_values = msg.motor 
-            
-            # Join the 8 integers into a CSV string
-            # Example result: "MOT,255,128,0,0,0,0,0,0\n"
-            payload = "MOT," + ",".join(map(str, motor_values)) + "\n"
-            
-            self.ser.write(payload.encode('utf-8'))
-        except Exception as e:
-            self.get_logger().error(f"Serial Write Error: {e}")
+    def motor_cb(self, msg: MotorControl):
+        """Store the latest motor control command."""
+        self.current_motor_cmd = msg
 
     def update(self):
-        if self.ser.in_waiting > 0:
-            try:
-                line = self.ser.readline().decode('utf-8', errors='ignore').strip()
-                if line.startswith("IMU,"):
-                    # Format: IMU,roll,pitch,yaw
-                    _, r, p, y = line.split(',')
-                    
-                    msg = Coordinate()
-                    msg.roll, msg.pitch, msg.yaw = float(r), float(p), float(y)
-                    self.imu_pub.publish(msg)
-            except ValueError:
-                pass
+        """Send motor control commands to Arduino."""
+        if self.current_motor_cmd is None:
+            return
+        
+        msg = self.current_motor_cmd
+        
+        # Extract wheel, servo and pump states.
+        left_wheel = msg.wheels[0] if len(msg.wheels) > 0 else 127
+        right_wheel = msg.wheels[1] if len(msg.wheels) > 1 else 127
+        servo1_pos = msg.servos[0] if len(msg.servos) > 0 else 90
+        servo2_pos = msg.servos[1] if len(msg.servos) > 1 else 90
+        pump_state = 1 if msg.pump else 0
+        
+        # Ensure values are in valid ranges
+        left_wheel = max(0, min(255, left_wheel))
+        right_wheel = max(0, min(255, right_wheel))
+        servo1_pos = max(0, min(180, servo1_pos))
+        servo2_pos = max(0, min(180, servo2_pos))
+        
+        # Create message:
+        # [left_wheel, right_wheel, servo1, servo2, pump, checksum_low, checksum_high]
+        checksum = left_wheel + right_wheel + servo1_pos + servo2_pos + pump_state
+        checksum_low = checksum & 0xFF
+        checksum_high = (checksum >> 8) & 0xFF
+        
+        try:
+            packet = [
+                left_wheel,
+                right_wheel,
+                servo1_pos,
+                servo2_pos,
+                pump_state,
+                checksum_low,
+                checksum_high,
+            ]
+            self.ser.write(bytes(packet))
+        except Exception as e:
+            self.get_logger().error(f"Failed to send motor command: {e}")
 
 def main(args=None):
     rclpy.init(args=args)
@@ -50,7 +64,7 @@ def main(args=None):
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        node.ser.write("MOT,0,0,0,0,0,0,0,0\n".encode()) # Emergency Stop
+        pass
     finally:
         node.ser.close()
         node.destroy_node()
