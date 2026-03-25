@@ -36,8 +36,8 @@ const int LEFT_MOTOR_IN1_PIN = 4;
 const int LEFT_MOTOR_IN2_PIN = 7;
 
 const int RIGHT_MOTOR_PWM_PIN = 6;
-const int RIGHT_MOTOR_IN1_PIN = 12;
-const int RIGHT_MOTOR_IN2_PIN = 13;
+const int RIGHT_MOTOR_IN1_PIN = 10;
+const int RIGHT_MOTOR_IN2_PIN = 11;
 #endif
 
 // Timing

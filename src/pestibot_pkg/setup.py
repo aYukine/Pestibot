@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'pestibot_control_node = pestibot_pkg.pestibot_control:main',
+            'pestibot_node = pestibot_pkg.pestibot:main'
         ],
     },
 )

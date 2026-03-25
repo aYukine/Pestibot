@@ -10,7 +10,7 @@ def generate_launch_description():
         ),
         Node(
             package='camera_pkg',
-            executable='ai_cam_node',
+            executable='cam_ai_node',
             name='ai'
         ),
         Node(

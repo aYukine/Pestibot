@@ -15,7 +15,7 @@ class CameraNode(Node):
         self.cap = None
         self.yolo_ai = None
 
-        self.declare_parameter('camera_index', 0)
+        self.declare_parameter('camera_index', 1)
         self.declare_parameter('confidence_threshold', 0.5)
 
         self.conf_threshold = float(
@@ -60,6 +60,8 @@ class CameraNode(Node):
         if not ret:
             self.get_logger().warn('Failed to capture frame.')
             return
+        
+        frame = cv2.flip(frame, 0)
 
         results = self.yolo_ai(frame, verbose=False)
         annotated = frame.copy()

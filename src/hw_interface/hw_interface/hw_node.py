@@ -55,6 +55,7 @@ class HardwareBridge(Node):
                 checksum_high,
             ]
             self.ser.write(bytes(packet))
+            print(packet)
         except Exception as e:
             self.get_logger().error(f"Failed to send motor command: {e}")
 
