@@ -47,8 +47,8 @@ unsigned long last_message_time = 0;
 // Motor control state
 uint8_t left_wheel_cmd = 127;
 uint8_t right_wheel_cmd = 127;
-uint8_t servo1_pos = 90;
-uint8_t servo2_pos = 90;
+uint8_t servo1_pos = 180;
+uint8_t servo2_pos = 180;
 bool pump_state = false;
 
 void setWheelOutput(
@@ -78,7 +78,7 @@ void setWheelOutput(
   }
 
 #if defined(ARDUINO_ARCH_ESP32)
-  ledcWrite(pwmChannel, pwm);
+  ledcWrite(pwmPin, pwm);
 #else
   analogWrite(pwmPin, pwm);
 #endif
@@ -103,10 +103,8 @@ void setup() {
   pinMode(RIGHT_MOTOR_IN2_PIN, OUTPUT);
 
 #if defined(ARDUINO_ARCH_ESP32)
-  ledcSetup(LEFT_PWM_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
-  ledcSetup(RIGHT_PWM_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
-  ledcAttachPin(LEFT_MOTOR_PWM_PIN, LEFT_PWM_CHANNEL);
-  ledcAttachPin(RIGHT_MOTOR_PWM_PIN, RIGHT_PWM_CHANNEL);
+  ledcAttach(LEFT_MOTOR_PWM_PIN, PWM_FREQ, PWM_RESOLUTION);
+  ledcAttach(RIGHT_MOTOR_PWM_PIN, PWM_FREQ, PWM_RESOLUTION);
 #else
   pinMode(LEFT_MOTOR_PWM_PIN, OUTPUT);
   pinMode(RIGHT_MOTOR_PWM_PIN, OUTPUT);

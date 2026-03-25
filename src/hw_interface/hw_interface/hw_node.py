@@ -7,7 +7,7 @@ class HardwareBridge(Node):
     def __init__(self):
         super().__init__('hardware_bridge')
         
-        self.ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=0.05)
+        self.ser = serial.Serial('/dev/ttyACM0', 115200, timeout=0.05)
         self.motor_sub = self.create_subscription(MotorControl, 'motor_actions', self.motor_cb, 10)
         self.current_motor_cmd = None
         
@@ -40,7 +40,7 @@ class HardwareBridge(Node):
         
         # Create message:
         # [left_wheel, right_wheel, servo1, servo2, pump, checksum_low, checksum_high]
-        checksum = left_wheel + right_wheel + servo1_pos + servo2_pos + pump_state
+        checksum = int(left_wheel) + int(right_wheel) + int(servo1_pos) + int(servo2_pos) + int(pump_state)
         checksum_low = checksum & 0xFF
         checksum_high = (checksum >> 8) & 0xFF
         
